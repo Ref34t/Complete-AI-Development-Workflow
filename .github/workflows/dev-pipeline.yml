@@ -10,14 +10,77 @@ on:
       trigger_type:
         description: 'Manual trigger type'
         required: true
-        default: 'prd-to-tasks'
+        default: 'create-prd'
         type: choice
         options:
+          - create-prd
           - prd-to-tasks
           - implement
+          - implement-ui
+          - implement-testing
           - review
+      project_idea:
+        description: 'Brief project idea for PRD creation'
+        required: false
+        type: string
 
 jobs:
+  create-prd:
+    if: |
+      (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'idea')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.trigger_type == 'create-prd')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Install Claude Code CLI
+        run: |
+          curl -fsSL https://install.claude.ai | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+      - name: Create PRD with Claude Code
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          echo "🤖 Creating comprehensive PRD with Claude Code CLI"
+          echo "💡 Project idea: ${{ github.event.issue.title || github.event.inputs.project_idea }}"
+          echo "📝 Generating detailed requirements document"
+          
+          # Create prompt file for Claude Code
+          cat > prd-prompt.md << 'EOF'
+          You are a senior product manager. Create a comprehensive Product Requirements Document (PRD) from this GitHub issue.
+          
+          Issue Title: ${{ github.event.issue.title }}
+          Issue Body: 
+          ${{ github.event.issue.body }}
+          
+          Create a detailed PRD with:
+          - Project Overview & Objectives
+          - Problem Statement
+          - User Stories with acceptance criteria
+          - Functional Requirements
+          - Technical Requirements
+          - Success Metrics
+          - Implementation Plan
+          - Final Acceptance Criteria
+          
+          Make it comprehensive and actionable for development teams.
+          EOF
+          
+          # Generate PRD using Claude Code
+          claude-code --prompt prd-prompt.md > generated-prd.md
+          
+          # Create new PRD issue using GitHub CLI
+          gh issue create \
+            --title "[PRD] ${{ github.event.issue.title }}" \
+            --body-file generated-prd.md \
+            --label "prd,needs-breakdown" \
+            --repo ${{ github.repository }}
+
   prd-to-tasks:
     if: |
       (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'prd')) ||
@@ -27,14 +90,85 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Parse PRD and create tasks
+      - name: Install Claude Code CLI
+        run: |
+          curl -fsSL https://install.claude.ai | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+      - name: Break down PRD into tasks
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
           echo "🔍 Parsing PRD from issue #${{ github.event.issue.number }}"
-          echo "📋 Creating structured tasks in Taskmaster"
-          # TODO: Add script to parse PRD and create tasks
+          echo "📋 Creating structured tasks in GitHub Projects"
+          
+          # Get PRD content
+          gh issue view ${{ github.event.issue.number }} --json title,body --jq '.title + "\n\n" + .body' > prd-content.md
+          
+          # Create task breakdown prompt
+          cat > task-prompt.md << 'EOF'
+          You are a senior technical lead. Break down this PRD into 5-10 specific development tasks.
+          
+          PRD Content:
+          $(cat prd-content.md)
+          
+          For each task, provide:
+          1. Clear, specific title
+          2. Detailed description 
+          3. Acceptance criteria (3-5 bullet points)
+          4. Priority (High/Medium/Low)
+          5. Complexity estimate (Simple/Medium/Complex)
+          
+          Format each task as:
+          ## Task: [TITLE]
+          **Description:** [Description]
+          **Priority:** [Priority]
+          **Complexity:** [Complexity]
+          **Acceptance Criteria:**
+          - [ ] Criterion 1
+          - [ ] Criterion 2
+          - [ ] Criterion 3
+          
+          ---
+          
+          Focus on logical development order and clear deliverables.
+          EOF
+          
+          # Generate tasks using Claude Code
+          claude-code --prompt task-prompt.md > generated-tasks.md
+          
+          # Parse and create individual task issues
+          python3 << 'PYTHON'
+          import subprocess
+          import re
+          
+          with open('generated-tasks.md', 'r') as f:
+              content = f.read()
+          
+          # Split tasks by separator
+          tasks = content.split('---')
+          
+          for i, task in enumerate(tasks):
+              if task.strip():
+                  # Extract title
+                  title_match = re.search(r'## Task: (.+)', task)
+                  if title_match:
+                      title = f"[TASK] {title_match.group(1).strip()}"
+                      
+                      # Create task issue
+                      with open(f'task-{i}.md', 'w') as f:
+                          f.write(f"Parent PRD: #${{ github.event.issue.number }}\n\n{task.strip()}")
+                      
+                      subprocess.run([
+                          'gh', 'issue', 'create',
+                          '--title', title,
+                          '--body-file', f'task-{i}.md',
+                          '--label', 'task,ready-for-dev',
+                          '--repo', '${{ github.repository }}'
+                      ])
+          PYTHON
 
   implement:
     if: |
@@ -45,14 +179,74 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Trigger Claude Code session
+      - name: Install Claude Code CLI
+        run: |
+          curl -fsSL https://install.claude.ai | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+      - name: Implement task with Claude Code
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
           echo "🤖 Starting Claude Code implementation"
           echo "📝 Task: ${{ github.event.issue.title }}"
-          # TODO: Add script to start Claude Code session
+          
+          # Get task details
+          gh issue view ${{ github.event.issue.number }} --json title,body --jq '.title + "\n\n" + .body' > task-details.md
+          
+          # Create implementation prompt
+          cat > implement-prompt.md << 'EOF'
+          You are a senior developer implementing this GitHub task. 
+          
+          Task Details:
+          $(cat task-details.md)
+          
+          Implementation Requirements:
+          1. Analyze the task requirements and acceptance criteria
+          2. Implement the solution following best practices
+          3. Create clean, well-documented code
+          4. Include appropriate tests if needed
+          5. Follow existing code patterns in the repository
+          
+          Please implement this task completely and create all necessary files.
+          EOF
+          
+          # Create feature branch
+          BRANCH_NAME="feature/task-${{ github.event.issue.number }}"
+          git checkout -b "$BRANCH_NAME"
+          
+          # Implement using Claude Code
+          claude-code --prompt implement-prompt.md
+          
+          # Commit and push changes
+          git add .
+          git commit -m "Implement: ${{ github.event.issue.title }}
+
+          Resolves #${{ github.event.issue.number }}
+
+          🤖 Generated with [Claude Code](https://claude.ai/code)
+
+          Co-Authored-By: Claude <noreply@anthropic.com>"
+          
+          git push origin "$BRANCH_NAME"
+          
+          # Create pull request
+          gh pr create \
+            --title "Implement: ${{ github.event.issue.title }}" \
+            --body "Implements #${{ github.event.issue.number }}
+
+          ## Implementation Summary
+          This PR implements the requirements specified in the task issue.
+
+          ## Testing
+          - [ ] Manual testing completed
+          - [ ] All acceptance criteria met
+
+          🤖 Generated with [Claude Code](https://claude.ai/code)" \
+            --label "implementation,review-ready" \
+            --repo ${{ github.repository }}
 
   review:
     if: |

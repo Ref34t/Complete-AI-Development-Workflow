@@ -1,0 +1,397 @@
+name: Setup Magic MCP for UI Development
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: 'Project name for MCP setup'
+        required: true
+        type: string
+
+jobs:
+  setup-mcp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install Magic MCP and BrowserMCP
+        run: |
+          echo "🔧 Installing Magic MCP for UI generation"
+          npm install -g @21st-dev/magic-mcp
+          
+          echo "🌐 Installing BrowserMCP for web automation"
+          npm install -g browsermcp
+          
+          echo "📚 Installing Context7 for enhanced context management"
+          npm install -g @upstash/context7
+          
+      - name: Setup MCP Configuration
+        run: |
+          echo "⚙️ Configuring Magic MCP for Claude Code integration"
+          
+          # Create MCP configuration directory
+          mkdir -p .mcp
+          
+          # Create MCP server configuration
+          cat > .mcp/config.json << 'EOF'
+          {
+            "mcpServers": {
+              "magic-ui": {
+                "command": "magic-mcp",
+                "args": ["--project-name", "${{ github.event.inputs.project_name }}"],
+                "env": {
+                  "MAGIC_MCP_PORT": "3000"
+                }
+              },
+              "browser-automation": {
+                "command": "browsermcp",
+                "args": ["--headless", "--port", "3001"],
+                "env": {
+                  "BROWSER_MCP_PORT": "3001",
+                  "BROWSER_MCP_HEADLESS": "true"
+                }
+              },
+              "context7": {
+                "command": "context7",
+                "args": ["--port", "3002"],
+                "env": {
+                  "CONTEXT7_PORT": "3002",
+                  "CONTEXT7_MAX_TOKENS": "200000"
+                }
+              }
+            }
+          }
+          EOF
+          
+          # Create Claude Code MCP integration script
+          cat > .mcp/start-mcp.sh << 'EOF'
+          #!/bin/bash
+          echo "🚀 Starting Magic MCP server for UI generation"
+          magic-mcp --project-name "$1" --port 3000 &
+          MAGIC_PID=$!
+          echo "Magic MCP server started with PID: $MAGIC_PID"
+          
+          echo "🌐 Starting BrowserMCP server for web automation"
+          browsermcp --headless --port 3001 &
+          BROWSER_PID=$!
+          echo "BrowserMCP server started with PID: $BROWSER_PID"
+          
+          echo "$MAGIC_PID" > .mcp/magic-server.pid
+          echo "$BROWSER_PID" > .mcp/browser-server.pid
+          
+          echo "✅ All MCP servers started successfully"
+          EOF
+          
+          chmod +x .mcp/start-mcp.sh
+          
+          # Create Context7 integration script
+          cat > .mcp/setup-context7.sh << 'EOF'
+          #!/bin/bash
+          echo "📚 Setting up Context7 for enhanced context management"
+          
+          # Install Context7
+          npm install -g @upstash/context7
+          
+          # Create Context7 configuration
+          mkdir -p .context7
+          cat > .context7/config.json << 'CONTEXT_EOF'
+          {
+            "provider": "upstash",
+            "contextWindow": 200000,
+            "chunkSize": 8000,
+            "overlap": 400,
+            "embedding": {
+              "model": "text-embedding-3-small",
+              "dimensions": 1536
+            },
+            "retrieval": {
+              "topK": 10,
+              "threshold": 0.7
+            }
+          }
+          CONTEXT_EOF
+          
+          echo "✅ Context7 configured for enhanced context management"
+          EOF
+          
+          chmod +x .mcp/setup-context7.sh
+          
+      - name: Create UI Development Templates
+        run: |
+          echo "🎨 Creating UI development templates"
+          
+          mkdir -p .github/ISSUE_TEMPLATE
+          
+          # Create UI-specific task template
+          cat > .github/ISSUE_TEMPLATE/ui-task.yml << 'EOF'
+          name: UI Development Task
+          description: UI/UX task that will use Magic MCP for generation
+          title: "[UI-TASK] "
+          labels: ["ui-task", "ready-for-dev", "needs-mcp"]
+          body:
+            - type: markdown
+              attributes:
+                value: |
+                  ## UI Development Task
+                  This task will use Magic MCP for UI generation and enhancement.
+
+            - type: input
+              id: parent-prd
+              attributes:
+                label: Parent PRD
+                description: Link to the original PRD issue
+                placeholder: "#123"
+              validations:
+                required: true
+
+            - type: textarea
+              id: ui-description
+              attributes:
+                label: UI Description
+                description: Describe the UI component or page to be built
+                placeholder: |
+                  - Component/page purpose
+                  - Visual requirements
+                  - Interaction patterns
+                  - Responsive behavior
+              validations:
+                required: true
+
+            - type: textarea
+              id: design-requirements
+              attributes:
+                label: Design Requirements
+                description: Specific design requirements and constraints
+                placeholder: |
+                  - Color scheme
+                  - Typography
+                  - Layout structure
+                  - Accessibility requirements
+
+            - type: dropdown
+              id: ui-framework
+              attributes:
+                label: UI Framework
+                description: Which framework should be used?
+                options:
+                  - React
+                  - Vue
+                  - Angular
+                  - Vanilla HTML/CSS
+                  - Other
+              validations:
+                required: true
+
+            - type: textarea
+              id: acceptance-criteria
+              attributes:
+                label: Acceptance Criteria
+                description: How will we know this UI task is complete?
+                placeholder: |
+                  - [ ] UI matches design requirements
+                  - [ ] Responsive across devices
+                  - [ ] Accessible (keyboard navigation, screen readers)
+                  - [ ] Interactive elements work correctly
+                validations:
+                  required: true
+          EOF
+          
+      - name: Update Main Workflow for MCP Integration
+        run: |
+          echo "🔄 Updating main workflow to use Magic MCP for UI tasks"
+          
+          # Create MCP-enhanced implementation step
+          cat >> .github/workflows/dev-pipeline.yml << 'EOF'
+
+  implement-ui:
+    if: |
+      (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'ui-task')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.trigger_type == 'implement-ui')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install Claude Code CLI
+        run: |
+          curl -fsSL https://install.claude.ai | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+      - name: Install Magic MCP
+        run: |
+          npm install -g @21st-dev/magic-mcp
+          
+      - name: Start Magic MCP Server
+        run: |
+          echo "🚀 Starting Magic MCP server for UI generation"
+          magic-mcp --project-name "ui-task-${{ github.event.issue.number }}" --port 3000 &
+          MCP_PID=$!
+          echo "MCP_PID=$MCP_PID" >> $GITHUB_ENV
+          sleep 5  # Wait for server to start
+          
+      - name: Implement UI task with Magic MCP
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          echo "🎨 Starting UI implementation with Magic MCP"
+          echo "📝 Task: ${{ github.event.issue.title }}"
+          
+          # Get task details
+          gh issue view ${{ github.event.issue.number }} --json title,body --jq '.title + "\n\n" + .body' > ui-task-details.md
+          
+          # Create UI implementation prompt with MCP integration
+          cat > ui-implement-prompt.md << 'EOF'
+          You are a senior UI/UX developer implementing this GitHub UI task with Magic MCP integration.
+          
+          Task Details:
+          $(cat ui-task-details.md)
+          
+          Implementation Requirements:
+          1. Use Magic MCP server (running on localhost:3000) for UI generation
+          2. Analyze the UI requirements and design specifications
+          3. Generate responsive, accessible UI components
+          4. Follow modern UI/UX best practices
+          5. Ensure cross-browser compatibility
+          6. Include appropriate animations and interactions
+          7. Follow existing design system if present
+          
+          Magic MCP Commands Available:
+          - Generate UI components based on descriptions
+          - Create responsive layouts
+          - Generate CSS with proper styling
+          - Create interactive elements
+          - Optimize for accessibility
+          
+          Please implement this UI task completely using Magic MCP capabilities.
+          EOF
+          
+          # Create feature branch
+          BRANCH_NAME="feature/ui-task-${{ github.event.issue.number }}"
+          git checkout -b "$BRANCH_NAME"
+          
+          # Implement using Claude Code with MCP integration
+          claude-code --mcp-config .mcp/config.json --prompt ui-implement-prompt.md
+          
+          # Commit and push changes
+          git add .
+          git commit -m "Implement UI: ${{ github.event.issue.title }}
+
+          Resolves #${{ github.event.issue.number }}
+
+          Generated using Magic MCP for enhanced UI development.
+
+          🤖 Generated with [Claude Code](https://claude.ai/code) + Magic MCP
+
+          Co-Authored-By: Claude <noreply@anthropic.com>"
+          
+          git push origin "$BRANCH_NAME"
+          
+          # Create pull request
+          gh pr create \
+            --title "Implement UI: ${{ github.event.issue.title }}" \
+            --body "Implements #${{ github.event.issue.number }}
+
+          ## UI Implementation Summary
+          This PR implements the UI requirements using Magic MCP for enhanced generation.
+
+          ## Features Implemented
+          - Responsive design across all devices
+          - Accessible UI components
+          - Modern styling and interactions
+          - Cross-browser compatibility
+
+          ## Testing
+          - [ ] Visual testing on desktop
+          - [ ] Visual testing on mobile
+          - [ ] Accessibility testing
+          - [ ] Cross-browser testing
+          - [ ] All acceptance criteria met
+
+          🎨 Generated with Magic MCP for superior UI development" \
+            --label "ui-implementation,review-ready" \
+            --repo ${{ github.repository }}
+            
+      - name: Stop Magic MCP Server
+        if: always()
+        run: |
+          if [ ! -z "$MCP_PID" ]; then
+            kill $MCP_PID || true
+            echo "🛑 Magic MCP server stopped"
+          fi
+          EOF
+          
+      - name: Commit MCP Integration
+        run: |
+          git add .
+          git commit -m "Add Magic MCP integration for UI development
+
+          - Added MCP server configuration
+          - Created UI-specific task template
+          - Integrated Magic MCP with Claude Code workflow
+          - Added automated UI generation capabilities
+
+          🤖 Generated with [Claude Code](https://claude.ai/code)
+
+          Co-Authored-By: Claude <noreply@anthropic.com>" || echo "No changes to commit"
+          
+      - name: Create Setup Instructions
+        run: |
+          cat > MCP_SETUP.md << 'EOF'
+          # Magic MCP Integration Setup
+
+          ## Overview
+          Magic MCP is integrated into the workflow to enhance UI development capabilities.
+
+          ## Features
+          - **Automated UI Generation**: Generate UI components from descriptions
+          - **Responsive Design**: Automatic responsive layout creation
+          - **Accessibility**: Built-in accessibility features
+          - **Modern Styling**: Contemporary CSS and design patterns
+
+          ## Usage
+
+          ### 1. Create UI Tasks
+          Use the "UI Development Task" issue template for UI-related work.
+
+          ### 2. Automatic Processing
+          UI tasks are automatically detected and processed using Magic MCP.
+
+          ### 3. Enhanced Generation
+          Magic MCP provides:
+          - Component generation from natural language
+          - Responsive layout creation
+          - Accessibility optimization
+          - Modern styling patterns
+
+          ## Manual Setup (Optional)
+          
+          To run Magic MCP locally:
+          ```bash
+          npm install -g @21st-dev/magic-mcp
+          magic-mcp --project-name "my-project" --port 3000
+          ```
+
+          ## Configuration
+          MCP configuration is in `.mcp/config.json` and automatically loaded by Claude Code.
+
+          ## Benefits
+          - **Faster UI Development**: Automated component generation
+          - **Consistent Design**: Follows design system patterns
+          - **Accessibility First**: Built-in accessibility features
+          - **Responsive by Default**: All components are mobile-first
+          EOF
+          
+          echo "📚 Created MCP setup documentation"

@@ -1,0 +1,80 @@
+name: Project Idea
+description: Submit a project idea for Claude Code to turn into a comprehensive PRD
+title: "[IDEA] "
+labels: ["idea", "needs-prd"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Project Idea Submission
+        Submit your project idea here and Claude Code will automatically create a comprehensive PRD.
+
+  - type: input
+    id: project-name
+    attributes:
+      label: Project Name
+      description: What should this project be called?
+      placeholder: e.g., Task Management App, E-commerce Platform
+    validations:
+      required: true
+
+  - type: textarea
+    id: basic-idea
+    attributes:
+      label: Basic Idea
+      description: Describe your project idea in a few sentences
+      placeholder: |
+        I want to build a...
+        The main purpose is to...
+        Users should be able to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: target-users
+    attributes:
+      label: Target Users
+      description: Who is this for?
+      placeholder: |
+        - Small business owners
+        - Developers
+        - Students
+        etc.
+
+  - type: textarea
+    id: key-features
+    attributes:
+      label: Key Features (Optional)
+      description: Any specific features you have in mind?
+      placeholder: |
+        - User authentication
+        - Real-time updates
+        - Mobile responsive
+        - etc.
+
+  - type: textarea
+    id: inspiration
+    attributes:
+      label: Inspiration/Examples (Optional)
+      description: Any existing apps or tools that inspired this idea?
+      placeholder: Like Notion but for..., Similar to Slack but with...
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Expected Complexity
+      description: How complex do you think this project is?
+      options:
+        - Simple (few features, straightforward)
+        - Medium (multiple features, some complexity)
+        - Complex (many features, advanced functionality)
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: timeline
+    attributes:
+      label: Rough Timeline
+      description: When would you like this completed?
+      placeholder: e.g., 2 weeks, 1 month, flexible

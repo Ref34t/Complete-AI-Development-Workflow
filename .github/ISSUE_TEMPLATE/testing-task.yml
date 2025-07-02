@@ -1,0 +1,91 @@
+name: Testing & Automation Task
+description: Testing task that will use BrowserMCP for web automation
+title: "[TEST-TASK] "
+labels: ["test-task", "ready-for-dev", "needs-browser-mcp"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Testing & Automation Task
+        This task will use BrowserMCP for web automation, testing, and validation.
+
+  - type: input
+    id: parent-prd
+    attributes:
+      label: Parent PRD
+      description: Link to the original PRD issue
+      placeholder: "#123"
+    validations:
+      required: true
+
+  - type: textarea
+    id: testing-description
+    attributes:
+      label: Testing Description
+      description: Describe what needs to be tested or automated
+      placeholder: |
+        - Features to test
+        - User flows to validate
+        - Automation requirements
+        - Performance criteria
+    validations:
+      required: true
+
+  - type: dropdown
+    id: test-type
+    attributes:
+      label: Test Type
+      description: What type of testing is this?
+      options:
+        - End-to-End Testing
+        - Integration Testing
+        - UI/UX Testing
+        - Performance Testing
+        - Accessibility Testing
+        - Cross-browser Testing
+        - Mobile Testing
+        - API Testing
+    validations:
+      required: true
+
+  - type: textarea
+    id: test-scenarios
+    attributes:
+      label: Test Scenarios
+      description: Specific test scenarios to implement
+      placeholder: |
+        Scenario 1: User registration flow
+        - Navigate to signup page
+        - Fill form with valid data
+        - Verify confirmation email
+        - Validate account activation
+
+        Scenario 2: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: automation-requirements
+    attributes:
+      label: Automation Requirements
+      description: What should be automated?
+      placeholder: |
+        - Browser interactions
+        - Form submissions
+        - Data validation
+        - Screenshot comparisons
+        - Performance monitoring
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: How will we know this testing task is complete?
+      placeholder: |
+        - [ ] All test scenarios pass
+        - [ ] Automation scripts created
+        - [ ] Test reports generated
+        - [ ] Performance metrics collected
+        - [ ] Cross-browser compatibility verified
+      validations:
+        required: true
