@@ -1,0 +1,106 @@
+name: Product Requirements Document (PRD)
+description: Create a new PRD to kick off the development workflow
+title: "[PRD] "
+labels: ["prd", "needs-breakdown"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Product Requirements Document Template
+        Fill out this template to create a comprehensive PRD that will drive the development workflow.
+
+  - type: input
+    id: project-name
+    attributes:
+      label: Project Name
+      description: What is the name of this project/feature?
+      placeholder: e.g., User Authentication System
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: Problem Statement
+      description: What problem are we solving?
+      placeholder: Describe the problem or opportunity...
+    validations:
+      required: true
+
+  - type: textarea
+    id: objectives
+    attributes:
+      label: Objectives & Success Metrics
+      description: What are we trying to achieve and how will we measure success?
+      placeholder: |
+        - Objective 1: ...
+        - Success metric: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-stories
+    attributes:
+      label: User Stories
+      description: Who are the users and what do they need?
+      placeholder: |
+        As a [user type], I want [functionality] so that [benefit].
+        
+        - As a...
+        - As a...
+    validations:
+      required: true
+
+  - type: textarea
+    id: functional-requirements
+    attributes:
+      label: Functional Requirements
+      description: What specific features and functionality must be built?
+      placeholder: |
+        1. Feature A must...
+        2. Feature B should...
+        3. System must handle...
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical-requirements
+    attributes:
+      label: Technical Requirements
+      description: Any specific technical constraints, performance requirements, or architectural decisions?
+      placeholder: |
+        - Technology stack: ...
+        - Performance: ...
+        - Security: ...
+        - Scalability: ...
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: How will we know when this is complete and working correctly?
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] All tests pass
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: What is the priority level of this project?
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: input
+    id: timeline
+    attributes:
+      label: Target Timeline
+      description: When do we need this completed?
+      placeholder: e.g., 2 weeks, End of sprint, Q1 2024

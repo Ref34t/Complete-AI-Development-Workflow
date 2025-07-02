@@ -1,0 +1,82 @@
+name: Development Pipeline
+
+on:
+  issues:
+    types: [opened, labeled, edited]
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      trigger_type:
+        description: 'Manual trigger type'
+        required: true
+        default: 'prd-to-tasks'
+        type: choice
+        options:
+          - prd-to-tasks
+          - implement
+          - review
+
+jobs:
+  prd-to-tasks:
+    if: |
+      (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'prd')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.trigger_type == 'prd-to-tasks')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Parse PRD and create tasks
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          echo "🔍 Parsing PRD from issue #${{ github.event.issue.number }}"
+          echo "📋 Creating structured tasks in Taskmaster"
+          # TODO: Add script to parse PRD and create tasks
+
+  implement:
+    if: |
+      (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'ready-for-dev')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.trigger_type == 'implement')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Trigger Claude Code session
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🤖 Starting Claude Code implementation"
+          echo "📝 Task: ${{ github.event.issue.title }}"
+          # TODO: Add script to start Claude Code session
+
+  review:
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.trigger_type == 'review')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Request CodeRabbit review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Requesting CodeRabbit review for PR #${{ github.event.pull_request.number }}"
+          echo "✅ Adding review checklist"
+          # TODO: Add script to trigger CodeRabbit review
+
+  workflow-status:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [prd-to-tasks, implement, review]
+    steps:
+      - name: Update workflow status
+        run: |
+          echo "📊 Workflow completed"
+          echo "🎯 Next steps determined by pipeline stage"
