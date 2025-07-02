@@ -9,16 +9,16 @@
 mkdir -p .github/workflows .github/ISSUE_TEMPLATE
 
 # Copy workflow files
-curl -O https://raw.githubusercontent.com/[your-repo]/dev-workflow/main/.github/workflows/dev-pipeline.yml
-curl -O https://raw.githubusercontent.com/[your-repo]/dev-workflow/main/.github/workflows/testing-pipeline.yml
-curl -O https://raw.githubusercontent.com/[your-repo]/dev-workflow/main/.github/workflows/mcp-setup.yml
+curl -O https://raw.githubusercontent.com/Ref34t/Complete-AI-Development-Workflow/main/.github/workflows/dev-pipeline.yml
+curl -O https://raw.githubusercontent.com/Ref34t/Complete-AI-Development-Workflow/main/.github/workflows/testing-pipeline.yml
+curl -O https://raw.githubusercontent.com/Ref34t/Complete-AI-Development-Workflow/main/.github/workflows/mcp-setup.yml
 
 # Copy issue templates
-curl -O https://raw.githubusercontent.com/[your-repo]/dev-workflow/main/.github/ISSUE_TEMPLATE/idea.yml
-curl -O https://raw.githubusercontent.com/[your-repo]/dev-workflow/main/.github/ISSUE_TEMPLATE/prd.yml
-curl -O https://raw.githubusercontent.com/[your-repo]/dev-workflow/main/.github/ISSUE_TEMPLATE/task.yml
-curl -O https://raw.githubusercontent.com/[your-repo]/dev-workflow/main/.github/ISSUE_TEMPLATE/ui-task.yml
-curl -O https://raw.githubusercontent.com/[your-repo]/dev-workflow/main/.github/ISSUE_TEMPLATE/testing-task.yml
+curl -O https://raw.githubusercontent.com/Ref34t/Complete-AI-Development-Workflow/main/.github/ISSUE_TEMPLATE/idea.yml
+curl -O https://raw.githubusercontent.com/Ref34t/Complete-AI-Development-Workflow/main/.github/ISSUE_TEMPLATE/prd.yml
+curl -O https://raw.githubusercontent.com/Ref34t/Complete-AI-Development-Workflow/main/.github/ISSUE_TEMPLATE/task.yml
+curl -O https://raw.githubusercontent.com/Ref34t/Complete-AI-Development-Workflow/main/.github/ISSUE_TEMPLATE/ui-task.yml
+curl -O https://raw.githubusercontent.com/Ref34t/Complete-AI-Development-Workflow/main/.github/ISSUE_TEMPLATE/testing-task.yml
 ```
 
 ### 2. One-Command Setup Script
